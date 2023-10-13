@@ -1,0 +1,31 @@
+{
+  "name": "logseq-assets-plus",
+  "version": "0.0.1",
+  "description": "A Logseq plugin to enhance the assets features!",
+  "repository": "https://github.com/xyhp915/logseq-assets-plus.git",
+  "author": "charlie",
+  "scripts": {
+    "dev": "parcel ./index.html"
+  },
+  "logseq": {
+    "id": "logseq-assets-plus",
+    "main": "dist/index.html",
+    "devEntry": "http://localhost:1234"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "parcel": "^2.10.0"
+  },
+  "alias": {
+    "react": "preact/compat",
+    "react-dom/test-utils": "preact/test-utils",
+    "react-dom": "preact/compat",
+    "react/jsx-runtime": "preact/jsx-runtime"
+  },
+  "dependencies": {
+    "@logseq/libs": "^0.0.15",
+    "@phosphor-icons/react": "^2.0.13",
+    "preact": "^10.18.1",
+    "react-spinners": "^0.13.8"
+  }
+}
