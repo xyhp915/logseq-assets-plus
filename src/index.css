@@ -20,8 +20,8 @@ ul {
 }
 
 .search-input-container {
-  min-width: 380px;
-  max-width: 520px;
+  min-width: 480px;
+  max-width: 560px;
   min-height: 240px;
   border-radius: 8px;
   overflow: hidden;
@@ -89,31 +89,51 @@ body.as-full .search-input-container {
 .search-input-list {
   list-style: none;
   margin: 0;
-  padding: 5px 20px;
+  padding: 5px 0 10px;
+  max-height: calc(60vh);
+  overflow-y: auto;
 }
 
-.search-input-list .loading {
+.search-input-list .loading, .search-input-list .nothing {
   display: flex;
   justify-content: center;
   align-items: center;
   padding-top: 40px;
 }
 
+.search-input-list .nothing {
+  color: lightgray;
+  font-size: 14px;
+}
+
 .search-input-list li {
   display: flex;
-  padding: 8px 0;
-  border-bottom: 1px solid #efefef;
+  padding: 10px 15px;
   cursor: pointer;
   user-select: none;
   white-space: break-spaces;
   word-break: break-all;
+  transition: background-color .3s;
+  position: relative;
 }
 
-.search-input-list li:last-child {
+.search-input-list li:after {
+  content: " ";
+  position: absolute;
+  bottom: 0;
+  left: 15px;
+  right: 15px;
+  border-bottom: 1px solid #ececec;
+  height: 0;
+  overflow: hidden;
+}
+
+.search-input-list li:last-child:after {
   border-bottom: none;
 }
 
-.search-input-list li:hover {
+.search-input-list li.active {
+  background-color: #f3f3f3;
 }
 
 .search-input-list li:active {
@@ -129,6 +149,9 @@ body.as-full .search-input-container {
   display: flex;
   align-items: center;
   justify-content: center;
+  font-weight: bold;
+  font-size: 10px;
+  opacity: .8;
 }
 
 .search-input-list li .r {
