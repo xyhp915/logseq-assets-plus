@@ -145,8 +145,12 @@ function App () {
     })
     const result = fuzzy.search(data.map(it => it.name), inputValue)
     if (!result?.[1]) return
-    const { idx, start } = result[1]
-    setCurrentListData(idx?.map(idx => data[idx])?.slice(0, 8))
+    const { idx, ranges } = result[1]
+    setCurrentListData(idx?.map((idx, n) => {
+      const r = data[idx]
+      r.ranges = ranges[n]
+      return r
+    })?.slice(0, 8))
   }, [data, inputValue])
 
   return (
@@ -237,11 +241,30 @@ function App () {
               <Prohibit size={16}/> No results
             </li> :
             (currentListData?.map((it, idx) => {
+              let name = it.name
+
+              console.log('==>>', it)
+
+              if (it.ranges?.length && inputValue?.length) {
+                const ranges = it.ranges.map((range, n) => {
+                  if (n === 0) return name.substring(0, range)
+                  return name.substring(it.ranges[n - 1], range)
+                })
+
+                const lastIdx = it.ranges[it.ranges.length -1]
+
+                if (lastIdx < name.length) {
+                  ranges.push(name.substring(lastIdx))
+                }
+
+                console.log('==>>>', ranges)
+              }
+
               return (
                 <li key={it.path} className={idx === activeIdx && 'active'}>
                   <div className="l">{it.extname?.toUpperCase()}</div>
                   <div className="r">
-                    <strong>{it.name}</strong>
+                    <strong dangerouslySetInnerHTML={{ __html: name }}></strong>
                     <p>
                       {it.size} • Modified 2023/09/01 12:34
                     </p>

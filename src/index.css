@@ -19,6 +19,10 @@ ul {
   padding: 0;
 }
 
+marker {
+  background-color: #eeb41e;
+}
+
 .search-input-container {
   min-width: 480px;
   max-width: 560px;
