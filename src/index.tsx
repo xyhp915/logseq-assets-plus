@@ -153,6 +153,23 @@ function App () {
     })?.slice(0, 8))
   }, [data, inputValue])
 
+  const onSelect = (activeItem) => {
+    if (!activeItem) return
+    const asFullFeatures = isAsFullFeatures()
+
+    closeUI()
+    setInputValue('')
+
+    if (asFullFeatures) {
+      logseq.UI.showMsg(`DEBUG://${JSON.stringify(activeItem)}`)
+      return
+    }
+
+    logseq.Editor.insertAtEditingCursor(
+      makeMdAssetLink(activeItem)
+    )
+  }
+
   return (
     <div className={'search-input-container animate__animated' + (visible ? ' animate__defaultIn' : '')} ref={elRef}>
       <div className="search-input-head">
@@ -179,19 +196,7 @@ function App () {
                    if (e.key === 'Enter') {
                      e.preventDefault()
                      const activeItem = currentListData?.[activeIdx]
-                     if (!activeItem) return
-                     const asFullFeatures = isAsFullFeatures()
-
-                     closeUI()
-                     setInputValue('')
-
-                     if (asFullFeatures) {
-                       return logseq.UI.showMsg(`DEBUG://${JSON.stringify(activeItem)}`)
-                     }
-
-                     logseq.Editor.insertAtEditingCursor(
-                       makeMdAssetLink(activeItem)
-                     )
+                     onSelect(activeItem)
                    }
                  }}
                  onChange={e => {
@@ -243,25 +248,30 @@ function App () {
             (currentListData?.map((it, idx) => {
               let name = it.name
 
-              console.log('==>>', it)
-
               if (it.ranges?.length && inputValue?.length) {
                 const ranges = it.ranges.map((range, n) => {
                   if (n === 0) return name.substring(0, range)
-                  return name.substring(it.ranges[n - 1], range)
+                  const ret = name.substring(it.ranges[n - 1], range)
+                  return n % 2 === 0 ? ret : `<marker>${ret}</marker>`
                 })
 
-                const lastIdx = it.ranges[it.ranges.length -1]
+                const lastIdx = it.ranges[it.ranges.length - 1]
 
                 if (lastIdx < name.length) {
                   ranges.push(name.substring(lastIdx))
                 }
 
-                console.log('==>>>', ranges)
+                name = ranges.join('')
               }
 
               return (
-                <li key={it.path} className={idx === activeIdx && 'active'}>
+                <li key={it.path}
+                    className={idx === activeIdx && 'active'}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onSelect(it)
+                    }}
+                >
                   <div className="l">{it.extname?.toUpperCase()}</div>
                   <div className="r">
                     <strong dangerouslySetInnerHTML={{ __html: name }}></strong>
@@ -328,7 +338,7 @@ function main () {
   logseq.App.registerCommandPalette({
     key: 'logseq-assets-plus',
     label: 'Assets Plus: open picker',
-    keybinding: { binding: 'ctrl+shift+o' }
+    keybinding: { binding: 'meta+shift+o' }
   }, open)
 }
 
