@@ -2,12 +2,19 @@ import './index.css'
 import '@logseq/libs'
 import { render } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
-import { Books, Gear, Images, ListMagnifyingGlass, Prohibit, Video } from '@phosphor-icons/react'
+import { Books, FileAudio, Gear, Images, ListMagnifyingGlass, Prohibit, Video } from '@phosphor-icons/react'
 import { MoonLoader } from 'react-spinners'
 
 const imageFormats = ['png', 'jpg', 'jpeg', 'webp', 'gif']
 const bookFormats = ['pdf']
 const videoFormats = ['mp4']
+const audioFormats = ['mp3']
+
+const tabTypes = {
+  'books': bookFormats,
+  'audios': audioFormats,
+  'images': imageFormats
+}
 
 const makeMdAssetLink = ({
   name, path, extname
@@ -16,7 +23,8 @@ const makeMdAssetLink = ({
   path = path.split('/assets/')?.[1]
   if (!path) return
 
-  const isSupportedRichExt = [...imageFormats, ...bookFormats].includes(extname?.toLowerCase())
+  const isSupportedRichExt = [...imageFormats, ...bookFormats, ...audioFormats]
+    .includes(extname?.toLowerCase())
 
   return `${isSupportedRichExt ? '!' : ''}[${name}](assets/${path})`
 }
@@ -29,6 +37,8 @@ function App () {
   const [data, setData] = useState([])
   const [currentListData, setCurrentListData] = useState([])
   const [activeIdx, setActiveIdx] = useState(0)
+  const [activeTab, setActiveTab] = useState('all')
+  const isActiveAllTab = activeTab === 'all'
   // const [asFullFeatures, setAsFullFeatures] = useState(false)
 
   // normalize item data
@@ -36,7 +46,8 @@ function App () {
     it.name = it.path && it.path.substring(it.path.lastIndexOf('/') + 1)
 
     if (typeof it.name === 'string') {
-      it.name = it.name.replace(/_\d+/, '')
+      it.originalName = it.name
+      it.name = it.name.replace(/[0-9_]{5,}(\.|$)/g, '$1')
       const extDotLastIdx = it.name.lastIndexOf('.')
       if (extDotLastIdx !== -1) {
         it.extname = it.name.substring(extDotLastIdx + 1)
@@ -60,6 +71,7 @@ function App () {
   const closeUI = (opts: any = {}) => {
     logseq.hideMainUI(opts)
     setVisible(false)
+    setActiveTab('all')
     document.body.classList.remove('as-full')
   }
 
@@ -83,7 +95,7 @@ function App () {
     if (preparing) return
     setPreparing(true)
     const data = await logseq.Assets.listFilesOfCurrentGraph()
-    await new Promise(r => setTimeout(r, 300))
+    await new Promise(r => setTimeout(r, 100))
     setData(data?.map(normalizeDataItem))
     setPreparing(false)
   }
@@ -129,8 +141,18 @@ function App () {
 
   // search
   useEffect(() => {
+    const typedData = data.filter(it => {
+      const activeTypes = tabTypes[activeTab]
+
+      if (activeTypes && !activeTypes.includes(it.extname?.toLowerCase())) {
+        return
+      }
+
+      return true
+    })
+
     if (!inputValue?.trim()) {
-      setCurrentListData(data?.slice(0, 5))
+      setCurrentListData(typedData?.slice(0, 8))
       return
     }
 
@@ -143,15 +165,16 @@ function App () {
       intraChars: '[\\p{L}\\d\']',
       intraContr: '\'\\p{L}{1,2}\\b',
     })
-    const result = fuzzy.search(data.map(it => it.name), inputValue)
+    const result = fuzzy.search(typedData.map(it => it.name), inputValue)
+
     if (!result?.[1]) return
     const { idx, ranges } = result[1]
     setCurrentListData(idx?.map((idx, n) => {
-      const r = data[idx]
+      const r = typedData[idx]
       r.ranges = ranges[n]
       return r
     })?.slice(0, 8))
-  }, [data, inputValue])
+  }, [data, inputValue, activeTab])
 
   const onSelect = (activeItem) => {
     if (!activeItem) return
@@ -161,7 +184,7 @@ function App () {
     setInputValue('')
 
     if (asFullFeatures) {
-      logseq.UI.showMsg(`DEBUG://${JSON.stringify(activeItem)}`)
+      logseq.UI.showMsg(`DEBUG://${JSON.stringify(activeItem)}`, 'error')
       return
     }
 
@@ -209,24 +232,24 @@ function App () {
 
       {/* tabs */}
       <ul className="search-input-tabs">
-        <li className={'active'} tabIndex={0}>
+        <li className={activeTab === 'all' && 'active'} tabIndex={0} onClick={() => setActiveTab('all')}>
           <strong>All</strong>
           <code>{data?.length || 0}</code>
         </li>
 
-        <li tabIndex={0}>
-          <Images size={18} weight={'duotone'}/>
-          <strong>Images</strong>
-        </li>
-
-        <li tabIndex={0}>
+        <li className={activeTab === 'books' && 'active'} tabIndex={0} onClick={() => setActiveTab('books')}>
           <Books size={18} weight={'duotone'}/>
           <strong>Books</strong>
         </li>
 
-        <li tabIndex={0}>
-          <Video size={18} weight={'duotone'}/>
-          <strong>Videos</strong>
+        <li className={activeTab === 'images' && 'active'} tabIndex={0} onClick={() => setActiveTab('images')}>
+          <Images size={18} weight={'duotone'}/>
+          <strong>Images</strong>
+        </li>
+
+        <li className={activeTab === 'audios' && 'active'} tabIndex={0} onClick={() => setActiveTab('audios')}>
+          <FileAudio size={18} weight={'duotone'}/>
+          <strong>Audios</strong>
         </li>
 
         <li className={'more'}>
@@ -275,7 +298,9 @@ function App () {
                 >
                   <div className="l">{it.extname?.toUpperCase()}</div>
                   <div className="r">
-                    <strong dangerouslySetInnerHTML={{ __html: name }}></strong>
+                    <strong
+                      title={it.originalName}
+                      dangerouslySetInnerHTML={{ __html: name }}></strong>
                     <p>
                       {it.size} • Modified 2023/09/01 12:34
                     </p>
