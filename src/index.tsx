@@ -29,7 +29,7 @@ const makeMdAssetLink = ({
   return `${isSupportedRichExt ? '!' : ''}[${name}](assets/${path})`
 }
 
-function App () {
+function App() {
   const elRef = useRef<HTMLDivElement>(null)
   const [visible, setVisible] = useState(false)
   const [inputValue, setInputValue] = useState('')
@@ -37,8 +37,8 @@ function App () {
   const [data, setData] = useState([])
   const [currentListData, setCurrentListData] = useState([])
   const [activeIdx, setActiveIdx] = useState(0)
-  const [activeTab, setActiveTab] = useState('all')
-  const isActiveAllTab = activeTab === 'all'
+  const tabs = ['all', 'books', 'images', 'audios']
+  const [activeTab, setActiveTab] = useState(tabs[0])
   // const [asFullFeatures, setAsFullFeatures] = useState(false)
 
   // normalize item data
@@ -122,8 +122,6 @@ function App () {
     document.addEventListener('keyup', handleESC, false)
     document.addEventListener('click', handleClick, false)
 
-    resetActiveIdx()
-
     return () => {
       document.removeEventListener('keyup', handleESC)
       document.removeEventListener('click', handleClick)
@@ -141,6 +139,8 @@ function App () {
 
   // search
   useEffect(() => {
+    resetActiveIdx()
+
     const typedData = data.filter(it => {
       const activeTypes = tabTypes[activeTab]
 
@@ -216,11 +216,22 @@ function App () {
                      e.preventDefault()
                    }
                  }}
+
                  onKeyUp={(e) => {
                    if (e.key === 'Enter') {
                      e.preventDefault()
                      const activeItem = currentListData?.[activeIdx]
                      onSelect(activeItem)
+                     return
+                   }
+
+                   if (e.ctrlKey && e.key === 'Tab') {
+                     const activeTabIdx = tabs.findIndex((v) => v === activeTab)
+                     let toIdx = activeTabIdx + 1
+                     // move tab
+                     if (toIdx >= tabs.length) toIdx = 0
+                     if (toIdx < 0) toIdx = (tabs.length -1)
+                     setActiveTab(tabs[toIdx])
                    }
                  }}
                  onChange={e => {
@@ -232,22 +243,26 @@ function App () {
 
       {/* tabs */}
       <ul className="search-input-tabs">
-        <li className={activeTab === 'all' && 'active'} tabIndex={0} onClick={() => setActiveTab('all')}>
+        <li className={activeTab === 'all' && 'active'} tabIndex={0}
+            onClick={() => setActiveTab('all')}>
           <strong>All</strong>
           <code>{data?.length || 0}</code>
         </li>
 
-        <li className={activeTab === 'books' && 'active'} tabIndex={0} onClick={() => setActiveTab('books')}>
+        <li className={activeTab === 'books' && 'active'} tabIndex={0}
+            onClick={() => setActiveTab('books')}>
           <Books size={18} weight={'duotone'}/>
           <strong>Books</strong>
         </li>
 
-        <li className={activeTab === 'images' && 'active'} tabIndex={0} onClick={() => setActiveTab('images')}>
+        <li className={activeTab === 'images' && 'active'} tabIndex={0}
+            onClick={() => setActiveTab('images')}>
           <Images size={18} weight={'duotone'}/>
           <strong>Images</strong>
         </li>
 
-        <li className={activeTab === 'audios' && 'active'} tabIndex={0} onClick={() => setActiveTab('audios')}>
+        <li className={activeTab === 'audios' && 'active'} tabIndex={0}
+            onClick={() => setActiveTab('audios')}>
           <FileAudio size={18} weight={'duotone'}/>
           <strong>Audios</strong>
         </li>
@@ -315,14 +330,14 @@ function App () {
 
 let mounted = false
 
-function mount () {
+function mount() {
   if (mounted) return
 
   render(<App/>, document.getElementById('app'))
   mounted = true
 }
 
-async function showPicker () {
+async function showPicker() {
   const container = document.querySelector('.search-input-container') as HTMLDivElement
   const {
     left,
@@ -354,7 +369,7 @@ async function showPicker () {
   }, 100)
 }
 
-function main () {
+function main() {
   const open: any = () => {
     mount()
     return setTimeout(showPicker, 0)
