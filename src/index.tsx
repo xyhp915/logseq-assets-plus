@@ -180,9 +180,10 @@ function App () {
           <input placeholder={'Search assets'}
                  value={inputValue}
                  onKeyDown={(e) => {
-                   const key = e.key
-                   const isArrowUp = key === 'ArrowUp'
-                   const isArrowDown = key === 'ArrowDown'
+                   const key = e.code
+                   const isCtrlKey = e.ctrlKey
+                   const isArrowUp = key === 'ArrowUp' || (isCtrlKey && key === 'KeyP')
+                   const isArrowDown = key === 'ArrowDown' || (isCtrlKey && key === 'KeyN')
                    if (isArrowDown || isArrowUp) {
                      isArrowDown ?
                        downActiveIdx() :
