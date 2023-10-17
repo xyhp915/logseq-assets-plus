@@ -12,6 +12,7 @@ import {
   Prohibit,
 } from '@phosphor-icons/react'
 import { MoonLoader } from 'react-spinners'
+import { LSPluginBaseInfo } from '@logseq/libs/dist/LSPlugin'
 
 const imageFormats = ['png', 'jpg', 'jpeg', 'webp', 'gif']
 const bookFormats = ['pdf']
@@ -387,18 +388,66 @@ async function showPicker() {
   }, 100)
 }
 
-function main() {
+function main(baseInfo: LSPluginBaseInfo) {
   const open: any = () => {
     mount()
     return setTimeout(showPicker, 0)
   }
 
-  logseq.Editor.registerSlashCommand('Insert an asset file', open)
+  logseq.Editor.registerSlashCommand('Insert a local asset file', open)
   logseq.App.registerCommandPalette({
     key: 'logseq-assets-plus',
     label: 'Assets Plus: open picker',
     keybinding: { binding: 'meta+shift+o' }
   }, open)
+
+  // themes
+  const loadThemeVars = async () => {
+    const props = [
+      '--ls-primary-background-color',
+      '--ls-secondary-background-color',
+      '--ls-tertiary-background-color',
+      '--ls-quaternary-background-color',
+      '--ls-active-primary-color',
+      '--ls-active-secondary-color',
+      '--ls-border-color',
+      '--ls-secondary-border-color',
+      '--ls-tertiary-border-color',
+      '--ls-primary-text-color',
+      '--ls-secondary-text-color',
+      '--ls-block-highlight-color'
+    ]
+
+    // @ts-ignore
+    const vals = await logseq.UI.resolveThemeCssPropsVals(props)
+    if (!vals) return
+    const style = document.body.style
+    Object.entries(vals).forEach(([k, v]) => {
+      style.setProperty(k, v as string)
+    })
+  }
+  const setThemeMode = (mode: string) => {
+    document.documentElement.dataset.theme = mode
+  }
+
+  logseq.App.onThemeChanged(() => {
+    setTimeout(loadThemeVars, 100)
+  })
+
+  logseq.App.onThemeModeChanged((t) => {
+    setTimeout(loadThemeVars, 100)
+    setThemeMode(t.mode)
+  })
+
+  logseq.on('ui:visible:changed', ({ visible }) => {
+    if (visible) loadThemeVars().catch(console.error)
+  })
+
+  setTimeout(() => {
+    logseq.App.getUserConfigs().then(t => {
+      setThemeMode(t.preferredThemeMode)
+    })
+  }, 100)
 }
 
 logseq.ready(main).catch(console.error)

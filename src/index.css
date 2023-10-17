@@ -10,6 +10,7 @@
   --ls-tertiary-border-color: rgba(200, 200, 200, 0.3);
   --ls-primary-text-color: #433f38;
   --ls-secondary-text-color: #161e2e;
+  /*--ls-block-highlight-color: --ls-quaternary-background-color;*/
 }
 
 html[data-theme='dark'] {
@@ -171,7 +172,7 @@ body.as-full .search-input-container {
   bottom: 0;
   left: 15px;
   right: 15px;
-  border-bottom: 1px solid var(--ls-border-color);
+  /*border-bottom: 1px solid var(--ls-border-color);*/
   height: 0;
   overflow: hidden;
 }
@@ -185,7 +186,7 @@ html[data-theme='dark'] .search-input-list li:after {
 }
 
 .search-input-list li.active {
-  background-color: var(--ls-quaternary-background-color);
+  background-color: var(--ls-tertiary-background-color);
 }
 
 .search-input-list li:active {
