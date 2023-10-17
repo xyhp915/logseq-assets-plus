@@ -45,6 +45,7 @@ function App() {
   const [inputValue, setInputValue] = useState('')
   const [preparing, setPreparing] = useState(false)
   const [data, setData] = useState([])
+  const [dataDirty, setDataDirty] = useState(false)
   const [currentListData, setCurrentListData] = useState([])
   const [activeIdx, setActiveIdx] = useState(0)
   const tabs = ['all', 'books', 'images', 'audios']
@@ -90,13 +91,6 @@ function App() {
   // is full features pane
   const isAsFullFeatures = () => document.body.classList.contains('as-full')
 
-  const closeUI = (opts: any = {}) => {
-    logseq.hideMainUI(opts)
-    setVisible(false)
-    setActiveTab('all')
-    document.body.classList.remove('as-full')
-  }
-
   const resetActiveIdx = () => setActiveIdx(0)
   const upActiveIdx = () => {
     if (!currentListData?.length) return
@@ -104,12 +98,20 @@ function App() {
     if (toIdx < 0) toIdx = currentListData?.length - 1
     setActiveIdx(toIdx)
   }
-
   const downActiveIdx = () => {
     if (!currentListData?.length) return
     let toIdx = activeIdx + 1
     if (toIdx >= currentListData?.length) toIdx = 0
     setActiveIdx(toIdx)
+  }
+
+  const closeUI = (opts: any = {}) => {
+    logseq.hideMainUI(opts)
+    setVisible(false)
+    setActiveTab('all')
+    resetActiveIdx()
+    setInputValue('')
+    document.body.classList.remove('as-full')
   }
 
   // load all assets data
@@ -168,7 +170,21 @@ function App() {
 
   useEffect(() => {
     logseq.on('ui:visible:changed', ({ visible }) => {
-      if (visible) setVisible(true)
+      if (visible) {
+        setVisible(true)
+        setDataDirty((dirty) => {
+          if (dirty) {
+            doPrepareData().catch(null)
+            return false
+          }
+        })
+      }
+    })
+
+    // TODO: teardown
+    logseq.App.onCurrentGraphChanged(() => {
+      setDataDirty(true)
+      closeUI()
     })
 
     setVisible(true)
