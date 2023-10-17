@@ -3,13 +3,14 @@ import '@logseq/libs'
 import { render } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
 import {
+  ArrowsClockwise,
   Books,
   Faders,
   FileAudio,
   Folder,
   Images,
   ListMagnifyingGlass,
-  Prohibit,
+  Prohibit, Spinner, SpinnerGap,
 } from '@phosphor-icons/react'
 import { MoonLoader } from 'react-spinners'
 import { LSPluginBaseInfo } from '@logseq/libs/dist/LSPlugin'
@@ -48,11 +49,17 @@ function App() {
   const [activeIdx, setActiveIdx] = useState(0)
   const tabs = ['all', 'books', 'images', 'audios']
   const [activeTab, setActiveTab] = useState(tabs[0])
+  const [activeSettings, setActiveSettings] = useState(false)
   // const [asFullFeatures, setAsFullFeatures] = useState(false)
 
   // normalize item data
   const normalizeDataItem = (it) => {
+    // TODO: with relative full path
     it.name = it.path && it.path.substring(it.path.lastIndexOf('/') + 1)
+
+    if (it.name?.startsWith('.')) {
+      return
+    }
 
     if (typeof it.name === 'string') {
       it.originalName = it.name
@@ -62,6 +69,7 @@ function App() {
         it.extname = it.name.substring(extDotLastIdx + 1)
       }
     }
+
     if (typeof it.size === 'number') {
       it.size = (it.size / 1024).toFixed(2)
       if (it.size > 999) {
@@ -71,6 +79,11 @@ function App() {
         it.size += 'KB'
       }
     }
+
+    if (typeof it.modifiedTime === 'number') {
+      it.formatModifiedTime = (new Date(it.modifiedTime)).toLocaleString()
+    }
+
     return it
   }
 
@@ -104,8 +117,8 @@ function App() {
     if (preparing) return
     setPreparing(true)
     const data = await logseq.Assets.listFilesOfCurrentGraph()
-    await new Promise(r => setTimeout(r, 100))
-    setData(data?.map(normalizeDataItem))
+    data?.sort((a, b) => (b.modifiedTime || 0) - (a.modifiedTime || 0))
+    setData(data?.map(normalizeDataItem).filter(it => !!it))
     setPreparing(false)
   }
 
@@ -113,6 +126,12 @@ function App() {
     const el = elRef.current
     if (!el) return
     const handleClick = (e: MouseEvent) => {
+      // check popup existed
+      if (activeSettings) {
+        setActiveSettings(false)
+        return
+      }
+
       const target = e.target as HTMLElement
       if (target && el.contains(target)) return
       closeUI()
@@ -145,7 +164,7 @@ function App() {
       document.removeEventListener('keyup', handleKeyup)
       document.removeEventListener('click', handleClick)
     }
-  }, [inputValue, activeTab])
+  }, [inputValue, activeTab, activeSettings])
 
   useEffect(() => {
     logseq.on('ui:visible:changed', ({ visible }) => {
@@ -219,7 +238,7 @@ function App() {
           <ListMagnifyingGlass size={28} weight={'duotone'}/>
         </span>
         <span className={'input-wrap'}>
-          <input placeholder={'Search assets'}
+          <input placeholder={'Search local assets for current graph'}
                  value={inputValue}
                  onKeyDown={(e) => {
                    const key = e.code
@@ -277,10 +296,22 @@ function App() {
           <strong>Audios</strong>
         </li>
 
-        <li className={'more'}>
-          <span onClick={() => logseq.UI.showMsg('TODO:// settings')}>
+        {/* settings */}
+        <li className={'settings-dropdown'}>
+          <span onClick={() => {
+            setActiveSettings(!activeSettings)
+          }}>
             <Faders size={18} weight={'bold'}/>
           </span>
+
+          {activeSettings && (
+            <div className="settings-dropdown-content">
+              <div className="item as-link" onClick={doPrepareData}>
+                <span><ArrowsClockwise size={17} weight={'bold'}/></span>
+                <strong>Reload assets</strong>
+              </div>
+            </div>
+          )}
         </li>
       </ul>
 
@@ -327,7 +358,7 @@ function App() {
                       title={it.originalName}
                       dangerouslySetInnerHTML={{ __html: name }}></strong>
                     <p>
-                      {it.size} • Modified 2023/09/01 12:34
+                      {it.size} • Modified {it.formatModifiedTime}
                     </p>
 
                     <span className="ctrls">
@@ -388,7 +419,7 @@ async function showPicker() {
   }, 100)
 }
 
-function main(baseInfo: LSPluginBaseInfo) {
+function main(_baseInfo: LSPluginBaseInfo) {
   const open: any = () => {
     mount()
     return setTimeout(showPicker, 0)
