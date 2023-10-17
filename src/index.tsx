@@ -2,7 +2,15 @@ import './index.css'
 import '@logseq/libs'
 import { render } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
-import { Books, FileAudio, Gear, Images, ListMagnifyingGlass, Prohibit, Video } from '@phosphor-icons/react'
+import {
+  Books,
+  Faders,
+  FileAudio,
+  Folder,
+  Images,
+  ListMagnifyingGlass,
+  Prohibit,
+} from '@phosphor-icons/react'
 import { MoonLoader } from 'react-spinners'
 
 const imageFormats = ['png', 'jpg', 'jpeg', 'webp', 'gif']
@@ -23,7 +31,7 @@ const makeMdAssetLink = ({
   path = path.split('/assets/')?.[1]
   if (!path) return
 
-  const isSupportedRichExt = [...imageFormats, ...bookFormats, ...audioFormats]
+  const isSupportedRichExt = [...imageFormats, ...bookFormats, ...audioFormats, ...videoFormats]
     .includes(extname?.toLowerCase())
 
   return `${isSupportedRichExt ? '!' : ''}[${name}](assets/${path})`
@@ -109,24 +117,34 @@ function App() {
       closeUI()
     }
 
-    const handleESC = (e: KeyboardEvent) => {
-      if (e.which === 27) {
+    const handleKeyup = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
         if (inputValue !== '') {
           return setInputValue('')
         }
 
         closeUI({ restoreEditingCursor: true })
+        return
+      }
+
+      if (e.ctrlKey && e.key === 'Tab') {
+        const activeTabIdx = tabs.findIndex((v) => v === activeTab)
+        let toIdx = activeTabIdx + 1
+        // move tab
+        if (toIdx >= tabs.length) toIdx = 0
+        if (toIdx < 0) toIdx = (tabs.length - 1)
+        setActiveTab(tabs[toIdx])
       }
     }
 
-    document.addEventListener('keyup', handleESC, false)
+    document.addEventListener('keyup', handleKeyup, false)
     document.addEventListener('click', handleClick, false)
 
     return () => {
-      document.removeEventListener('keyup', handleESC)
+      document.removeEventListener('keyup', handleKeyup)
       document.removeEventListener('click', handleClick)
     }
-  }, [inputValue])
+  }, [inputValue, activeTab])
 
   useEffect(() => {
     logseq.on('ui:visible:changed', ({ visible }) => {
@@ -176,17 +194,17 @@ function App() {
     })?.slice(0, 8))
   }, [data, inputValue, activeTab])
 
-  const onSelect = (activeItem) => {
+  const onSelect = (activeItem: any) => {
     if (!activeItem) return
     const asFullFeatures = isAsFullFeatures()
 
-    closeUI()
-    setInputValue('')
-
     if (asFullFeatures) {
-      logseq.UI.showMsg(`DEBUG://${JSON.stringify(activeItem)}`, 'error')
+      logseq.App.openExternal('file://' + activeItem.path)
       return
     }
+
+    closeUI()
+    setInputValue('')
 
     logseq.Editor.insertAtEditingCursor(
       makeMdAssetLink(activeItem)
@@ -224,15 +242,6 @@ function App() {
                      onSelect(activeItem)
                      return
                    }
-
-                   if (e.ctrlKey && e.key === 'Tab') {
-                     const activeTabIdx = tabs.findIndex((v) => v === activeTab)
-                     let toIdx = activeTabIdx + 1
-                     // move tab
-                     if (toIdx >= tabs.length) toIdx = 0
-                     if (toIdx < 0) toIdx = (tabs.length -1)
-                     setActiveTab(tabs[toIdx])
-                   }
                  }}
                  onChange={e => {
                    setInputValue(e.target.value)
@@ -268,8 +277,8 @@ function App() {
         </li>
 
         <li className={'more'}>
-          <span>
-            <Gear size={18} weight={'bold'}/>
+          <span onClick={() => logseq.UI.showMsg('TODO:// settings')}>
+            <Faders size={18} weight={'bold'}/>
           </span>
         </li>
       </ul>
@@ -319,6 +328,15 @@ function App() {
                     <p>
                       {it.size} • Modified 2023/09/01 12:34
                     </p>
+
+                    <span className="ctrls">
+                      <a onClick={(e) => {
+                        logseq.App.showItemInFolder(it.path)
+                        e.stopPropagation()
+                      }}>
+                        <Folder size={18} weight={'duotone'}/>
+                      </a>
+                    </span>
                   </div>
                 </li>
               )
