@@ -1,6 +1,6 @@
 {
   "name": "logseq-assets-plus",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A Logseq plugin to enhance the assets features.",
   "repository": "https://github.com/xyhp915/logseq-assets-plus.git",
   "author": "charlie",
@@ -27,6 +27,7 @@
   "dependencies": {
     "@logseq/libs": "^0.0.15",
     "@phosphor-icons/react": "^2.0.13",
+    "normalize-path": "^3.0.0",
     "preact": "^10.18.1",
     "react-spinners": "^0.13.8"
   }

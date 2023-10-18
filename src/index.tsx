@@ -10,10 +10,11 @@ import {
   Folder,
   Images,
   ListMagnifyingGlass,
-  Prohibit, Spinner, SpinnerGap,
+  Prohibit
 } from '@phosphor-icons/react'
 import { MoonLoader } from 'react-spinners'
 import { LSPluginBaseInfo } from '@logseq/libs/dist/LSPlugin'
+import normalizePath from 'normalize-path'
 
 const imageFormats = ['png', 'jpg', 'jpeg', 'webp', 'gif']
 const bookFormats = ['pdf']
@@ -27,10 +28,10 @@ const tabTypes = {
 }
 
 const makeMdAssetLink = ({
-  name, path, extname
+  name, path, normalizePath, extname
 }) => {
   if (!name || !path) return
-  path = path.split('/assets/')?.[1]
+  path = normalizePath.split('/assets/')?.[1]
   if (!path) return
 
   const isSupportedRichExt = [...imageFormats, ...bookFormats, ...audioFormats, ...videoFormats]
@@ -45,7 +46,7 @@ function App() {
   const [inputValue, setInputValue] = useState('')
   const [preparing, setPreparing] = useState(false)
   const [data, setData] = useState([])
-  const [dataDirty, setDataDirty] = useState(false)
+  const [_dataDirty, setDataDirty] = useState(false)
   const [currentListData, setCurrentListData] = useState([])
   const [activeIdx, setActiveIdx] = useState(0)
   const tabs = ['all', 'books', 'images', 'audios']
@@ -55,8 +56,11 @@ function App() {
 
   // normalize item data
   const normalizeDataItem = (it) => {
+    if (!it.path) return
+
     // TODO: with relative full path
-    it.name = it.path && it.path.substring(it.path.lastIndexOf('/') + 1)
+    it.normalizePath = normalizePath(it.path)
+    it.name = it.normalizePath&& it.normalizePath.substring(it.normalizePath.lastIndexOf('/') + 1)
 
     if (it.name?.startsWith('.')) {
       return
@@ -235,7 +239,7 @@ function App() {
     const asFullFeatures = isAsFullFeatures()
 
     if (asFullFeatures) {
-      logseq.App.openExternal('file://' + activeItem.path)
+      logseq.App.openPath(activeItem.path)
       return
     }
 
@@ -445,7 +449,7 @@ function main(_baseInfo: LSPluginBaseInfo) {
   logseq.App.registerCommandPalette({
     key: 'logseq-assets-plus',
     label: 'Assets Plus: open picker',
-    keybinding: { binding: 'meta+shift+o' }
+    keybinding: { binding: 'mod+shift+o' }
   }, open)
 
   // themes
