@@ -27,6 +27,7 @@
   "dependencies": {
     "@logseq/libs": "^0.0.15",
     "@phosphor-icons/react": "^2.0.13",
+    "logseq-l10n": "^0.2.0",
     "normalize-path": "^3.0.0",
     "preact": "^10.18.1",
     "react-spinners": "^0.13.8"
