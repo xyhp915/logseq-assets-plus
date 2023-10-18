@@ -1,6 +1,6 @@
 {
   "name": "logseq-assets-plus",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A Logseq plugin to enhance the assets features.",
   "repository": "https://github.com/xyhp915/logseq-assets-plus.git",
   "author": "charlie",
@@ -12,7 +12,7 @@
     "id": "logseq-assets-plus",
     "title": "Assets plus",
     "main": "dist/index.html",
-    "icon": "logo.png"
+    "icon": "icon.png"
   },
   "license": "MIT",
   "devDependencies": {
