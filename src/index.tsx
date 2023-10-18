@@ -18,6 +18,7 @@ import normalizePath from 'normalize-path'
 import { setup as l10nSetup, t } from "logseq-l10n" //https://github.com/sethyuan/logseq-l10n
 import ja from "./translations/ja.json"
 import zhCN from "./translations/zh-CN.json"
+import ko from "./translations/ko.json"
 const imageFormats = ['png', 'jpg', 'jpeg', 'webp', 'gif']
 const bookFormats = ['pdf']
 const videoFormats = ['mp4']
@@ -443,7 +444,7 @@ async function showPicker() {
 
 function main(_baseInfo: LSPluginBaseInfo) {
     (async () => {
-    await l10nSetup({ builtinTranslations: {  ja, "zh-CN": zhCN  } }); // logseq-l10n
+    await l10nSetup({ builtinTranslations: {  ja, "zh-CN": zhCN ,ko } }); // logseq-l10n
   } )();
   const open: any = () => {
     mount()
