@@ -376,7 +376,7 @@ function App() {
         <li className={activeTab === 'books' && 'active'} tabIndex={0}
             onClick={() => setActiveTab('books')}>
           <Books size={18} weight={'duotone'}/>
-          <strong>{t('Books')}</strong>
+          <strong>{t('Documents')}</strong>
         </li>
 
         <li className={activeTab === 'images' && 'active'} tabIndex={0}
