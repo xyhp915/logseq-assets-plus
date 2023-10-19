@@ -1,6 +1,6 @@
 {
     "Assets Plus: open picker": "Assets Plus: 打开选择工具",
-    "Search local assets for current graph" : "搜索当前图形的本地资源",
+    "Search local assets for current graph": "搜索当前图形的本地资源",
     "Audios": "音频",
     "Images": "图像",
     "Documents": "文档",
@@ -8,7 +8,7 @@
     "Reload assets": "重新加载资源",
     "Modified": "修改日期",
     "No results": "没有结果",
-    "Open the folder on OS": "在操作系统中打开文件夹",
-    "Insert this asset into the current block at the cursor position": "将此资源插入到光标位置的当前块中",
+    "Open the folder with the OS": "使用操作系统打开文件夹",
+    "Insert this asset at the cursor position. If that position doesn't exist, open this file on the OS.": "在光标位置插入此资源。如果该位置不存在，则在操作系统上打开此文件。",
     "Search by keyword or extension": "按关键词或扩展名搜索"
 }

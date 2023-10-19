@@ -440,7 +440,7 @@ function App() {
               }
 
               return (
-                <li key={it.path} title={t('Insert this asset into the current block at the cursor position')}
+                <li key={it.path} title={t('Insert this asset at the cursor position. If that position doesn\'t exist, open this file on the OS.')}
                     data-index={idx}
                     className={idx === activeItemIdx && 'active'}
                     onClick={(e) => {
@@ -457,7 +457,7 @@ function App() {
                       {it.size} • {t('Modified')} {it.formatModifiedTime}
                     </p>
 
-                    <span className="ctrls" title={t('Open the folder on OS')}>
+                    <span className="ctrls" title={t('Open the folder with the OS')}>
                       <a onClick={(e) => {
                         logseq.App.showItemInFolder(it.path)
                         e.stopPropagation()

@@ -1,6 +1,6 @@
 {
     "Assets Plus: open picker": "Assets Plusプラグイン: 選択ツールを開く",
-    "Search local assets for current graph" : "アセットファイルの検索 (現在のグラフのみ)",
+    "Search local assets for current graph": "アセットファイルの検索 (現在のグラフのみ)",
     "Audios": "オーディオ",
     "Images": "画像",
     "Documents": "文書",
@@ -8,7 +8,7 @@
     "Reload assets": "アセットを再読み込み",
     "Modified": "変更日時",
     "No results": "結果が見つかりません",
-    "Open the folder on OS": "OS上のフォルダを開く",
-    "Insert this asset into the current block at the cursor position": "このアセットを現在のブロックのカーソル位置に挿入",
+    "Open the folder with the OS": "OS上のフォルダを開く",
+    "Insert this asset at the cursor position. If that position doesn't exist, open the file on the OS.": "カーソル位置にアセットを挿入します。その位置が存在しない場合は、OS上のファイルを開きます。",
     "Search by keyword or extension": "キーワードまたは拡張子で検索"
 }
