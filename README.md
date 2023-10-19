@@ -19,8 +19,8 @@ From the marketplace:
 
 ### Options
 
-1. Use Slash Command
-
+1. Use Slash Command  
+ 
    Place your cursor in a block and execute the slash command by typing `asset` and selecting "Insert a local asset file." A box for asset selection will appear.
 
 2. Use Shortcut Key

@@ -15,11 +15,12 @@ import {
 import { MoonLoader } from 'react-spinners'
 import { LSPluginBaseInfo } from '@logseq/libs/dist/LSPlugin'
 import normalizePath from 'normalize-path'
-import { setup as l10nSetup, t } from "logseq-l10n" //https://github.com/sethyuan/logseq-l10n
-import ja from "./translations/ja.json"
-import zhCN from "./translations/zh-CN.json"
-import zhHant from "./translations/zh-Hant.json"
-import ko from "./translations/ko.json"
+import { setup as l10nSetup, t } from 'logseq-l10n' //https://github.com/sethyuan/logseq-l10n
+import ja from './translations/ja.json'
+import zhCN from './translations/zh-CN.json'
+import zhHant from './translations/zh-Hant.json'
+import ko from './translations/ko.json'
+
 const imageFormats = ['png', 'jpg', 'jpeg', 'webp', 'gif']
 const bookFormats = ['pdf']
 const videoFormats = ['mp4']
@@ -52,7 +53,7 @@ function App() {
   const [data, setData] = useState([])
   const [_dataDirty, setDataDirty] = useState(false)
   const [currentListData, setCurrentListData] = useState([])
-  const [activeIdx, setActiveIdx] = useState(0)
+  const [activeItemIdx, setActiveItemIdx] = useState(0)
   const tabs = ['all', 'books', 'images', 'audios']
   const [activeTab, setActiveTab] = useState(tabs[0])
   const [activeSettings, setActiveSettings] = useState(false)
@@ -64,7 +65,7 @@ function App() {
 
     // TODO: with relative full path
     it.normalizePath = normalizePath(it.path)
-    it.name = it.normalizePath&& it.normalizePath.substring(it.normalizePath.lastIndexOf('/') + 1)
+    it.name = it.normalizePath && it.normalizePath.substring(it.normalizePath.lastIndexOf('/') + 1)
 
     if (it.name?.startsWith('.')) {
       return
@@ -99,18 +100,28 @@ function App() {
   // is full features pane
   const isAsFullFeatures = () => document.body.classList.contains('as-full')
 
-  const resetActiveIdx = () => setActiveIdx(0)
+  const resetActiveIdx = () => setActiveItemIdx(0)
   const upActiveIdx = () => {
-    if (!currentListData?.length) return
-    let toIdx = activeIdx - 1
-    if (toIdx < 0) toIdx = currentListData?.length - 1
-    setActiveIdx(toIdx)
+    setCurrentListData((currentListData) => {
+      setActiveItemIdx((activeItemIdx) => {
+        if (!currentListData?.length) return 0
+        let toIdx = activeItemIdx - 1
+        if (toIdx < 0) toIdx = currentListData?.length - 1
+        return toIdx
+      })
+      return currentListData
+    })
   }
   const downActiveIdx = () => {
-    if (!currentListData?.length) return
-    let toIdx = activeIdx + 1
-    if (toIdx >= currentListData?.length) toIdx = 0
-    setActiveIdx(toIdx)
+    setCurrentListData((currentListData) => {
+      setActiveItemIdx((activeItemIdx) => {
+        if (!currentListData?.length) return 0
+        let toIdx = activeItemIdx + 1
+        if (toIdx >= currentListData?.length) toIdx = 0
+        return toIdx
+      })
+      return currentListData
+    })
   }
 
   const closeUI = (opts: any = {}) => {
@@ -197,6 +208,25 @@ function App() {
 
     setVisible(true)
     doPrepareData().catch(console.error)
+
+    // global keydown for move active item
+    const handleKeydown = (e: KeyboardEvent) => {
+      const key = e.code
+      const isCtrlKey = e.ctrlKey
+      const isArrowUp = key === 'ArrowUp' || (isCtrlKey && key === 'KeyP')
+      const isArrowDown = key === 'ArrowDown' || (isCtrlKey && key === 'KeyN')
+      console.log('keydown', key, isArrowUp, isArrowDown)
+      if (isArrowDown || isArrowUp) {
+        isArrowDown ?
+          downActiveIdx() :
+          upActiveIdx()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeydown, false)
+    return () => {
+      document.removeEventListener('keydown', handleKeydown)
+    }
   }, [])
 
   // search
@@ -214,7 +244,7 @@ function App() {
     })
 
     if (!inputValue?.trim()) {
-      setCurrentListData(typedData?.slice(0, 8))
+      setCurrentListData(typedData?.slice(0, 32))
       return
     }
 
@@ -235,8 +265,34 @@ function App() {
       const r = typedData[idx]
       r.ranges = ranges[n]
       return r
-    })?.slice(0, 8))
+    })?.slice(0, 32))
   }, [data, inputValue, activeTab])
+
+  // focus active item in view
+  useEffect(() => {
+    const el = elRef.current
+    const listEl = el?.querySelector('.search-input-list')
+    if (!el) return
+    const activeItem = el.querySelector(`[data-index="${activeItemIdx}"]`)
+    if (!activeItem) return
+    const activeItemRect = activeItem.getBoundingClientRect()
+    const elRect = listEl.getBoundingClientRect()
+    const { height: itemHeight } = activeItemRect
+    const { height: elHeight } = elRect
+    const { top: itemTop } = activeItemRect
+    const { top: elTop } = elRect
+    const itemBottom = itemTop + itemHeight
+    const elBottom = elTop + elHeight
+
+    const isInView = itemTop >= elTop && itemBottom <= elBottom
+
+    if (!isInView) {
+      // using scroll into view
+      activeItem.scrollIntoView({
+        block: 'center',
+      })
+    }
+  }, [activeItemIdx])
 
   const onSelect = (activeItem: any) => {
     if (!activeItem) return
@@ -256,19 +312,34 @@ function App() {
   }
 
   return (
-    <div className={'search-input-container animate__animated' + (visible ? ' animate__defaultIn' : '')} ref={elRef}>
+    <div className={'search-input-container animate__animated' + (visible ? ' animate__defaultIn' : '')}
+         ref={elRef}
+    >
       <div className="search-input-head">
         <span className={'icon-wrap'}>
           <ListMagnifyingGlass size={28} weight={'duotone'}/>
         </span>
-        <span className={'input-wrap'} title={t("Search by keyword or extension")}>
-          <input placeholder={t("Search local assets for current graph")}
+        <span className={'input-wrap'} title={t('Search by keyword or extension')}>
+          <input placeholder={t('Search local assets for current graph')}
                  value={inputValue}
                  onKeyDown={(e) => {
                    const key = e.code
                    const isCtrlKey = e.ctrlKey
                    const isArrowUp = key === 'ArrowUp' || (isCtrlKey && key === 'KeyP')
                    const isArrowDown = key === 'ArrowDown' || (isCtrlKey && key === 'KeyN')
+                   const isTab = key === 'Tab'
+
+                   if (isTab) {
+                     e.preventDefault()
+                     const activeTabIdx = tabs.findIndex((v) => v === activeTab)
+                     let toIdx = activeTabIdx + 1
+                     // move tab
+                     if (toIdx >= tabs.length) toIdx = 0
+                     if (toIdx < 0) toIdx = (tabs.length - 1)
+                     setActiveTab(tabs[toIdx])
+                     return
+                   }
+
                    if (isArrowDown || isArrowUp) {
                      isArrowDown ?
                        downActiveIdx() :
@@ -282,7 +353,7 @@ function App() {
                  onKeyUp={(e) => {
                    if (e.key === 'Enter') {
                      e.preventDefault()
-                     const activeItem = currentListData?.[activeIdx]
+                     const activeItem = currentListData?.[activeItemIdx]
                      onSelect(activeItem)
                      return
                    }
@@ -298,26 +369,26 @@ function App() {
       <ul className="search-input-tabs">
         <li className={activeTab === 'all' && 'active'} tabIndex={0}
             onClick={() => setActiveTab('all')}>
-          <strong>{t("All")}</strong>
+          <strong>{t('All')}</strong>
           <code>{data?.length || 0}</code>
         </li>
 
         <li className={activeTab === 'books' && 'active'} tabIndex={0}
             onClick={() => setActiveTab('books')}>
           <Books size={18} weight={'duotone'}/>
-          <strong>{t("Books")}</strong>
+          <strong>{t('Books')}</strong>
         </li>
 
         <li className={activeTab === 'images' && 'active'} tabIndex={0}
             onClick={() => setActiveTab('images')}>
           <Images size={18} weight={'duotone'}/>
-          <strong>{t("Images")}</strong>
+          <strong>{t('Images')}</strong>
         </li>
 
         <li className={activeTab === 'audios' && 'active'} tabIndex={0}
             onClick={() => setActiveTab('audios')}>
           <FileAudio size={18} weight={'duotone'}/>
-          <strong>{t("Audios")}</strong>
+          <strong>{t('Audios')}</strong>
         </li>
 
         {/* settings */}
@@ -332,7 +403,7 @@ function App() {
             <div className="settings-dropdown-content">
               <div className="item as-link" onClick={doPrepareData}>
                 <span><ArrowsClockwise size={17} weight={'bold'}/></span>
-                <strong>{t("Reload assets")}</strong>
+                <strong>{t('Reload assets')}</strong>
               </div>
             </div>
           )}
@@ -347,7 +418,7 @@ function App() {
           </li> :
           (!currentListData?.length ?
             <li className={'nothing'}>
-              <Prohibit size={16} /> {t("No results")}
+              <Prohibit size={16}/> {t('No results')}
             </li> :
             (currentListData?.map((it, idx) => {
               let name = it.name
@@ -369,8 +440,9 @@ function App() {
               }
 
               return (
-                <li key={it.path} title={t("Insert this asset into the current block at the cursor position")}
-                    className={idx === activeIdx && 'active'}
+                <li key={it.path} title={t('Insert this asset into the current block at the cursor position')}
+                    data-index={idx}
+                    className={idx === activeItemIdx && 'active'}
                     onClick={(e) => {
                       e.stopPropagation()
                       onSelect(it)
@@ -382,15 +454,15 @@ function App() {
                       title={it.originalName}
                       dangerouslySetInnerHTML={{ __html: name }}></strong>
                     <p>
-                      {it.size} • {t("Modified")} {it.formatModifiedTime}
+                      {it.size} • {t('Modified')} {it.formatModifiedTime}
                     </p>
 
-                    <span className="ctrls" title={t("Open the folder on OS")}>
+                    <span className="ctrls" title={t('Open the folder on OS')}>
                       <a onClick={(e) => {
                         logseq.App.showItemInFolder(it.path)
                         e.stopPropagation()
                       }}>
-                        <Folder size={18} weight={'duotone'} />
+                        <Folder size={18} weight={'duotone'}/>
                       </a>
                     </span>
                   </div>
@@ -445,8 +517,8 @@ async function showPicker() {
 
 function main(_baseInfo: LSPluginBaseInfo) {
   (async () => {
-    await l10nSetup({ builtinTranslations: { ja, "zh-CN": zhCN, "zh-Hant": zhHant, ko } }); // logseq-l10n
-  } )();
+    await l10nSetup({ builtinTranslations: { ja, 'zh-CN': zhCN, 'zh-Hant': zhHant, ko } }) // logseq-l10n
+  })()
   const open: any = () => {
     mount()
     return setTimeout(showPicker, 0)
@@ -455,7 +527,7 @@ function main(_baseInfo: LSPluginBaseInfo) {
   logseq.Editor.registerSlashCommand('Insert a local asset file', open)
   logseq.App.registerCommandPalette({
     key: 'logseq-assets-plus',
-    label: t("Assets Plus: open picker"),
+    label: t('Assets Plus: open picker'),
     keybinding: { binding: 'mod+shift+o' }
   }, open)
 
