@@ -1,6 +1,7 @@
-[日本語](https://github.com/xyhp915/logseq-assets-plus/blob/master/README.ja.md)
 
 # logseq-assets-plus
+[English](https://github.com/xyhp915/logseq-assets-plus) | 
+[日本語](https://github.com/xyhp915/logseq-assets-plus/blob/master/README.ja.md)  
 
 WIP: A Logseq plugin to enhance assets (file storage) features! 🚀
 
@@ -24,7 +25,7 @@ From the marketplace:
 
 2. Use Shortcut Key
 
-   Place your cursor in a block and execute the shortcut key. The default key settings are `Win+Shift+O` (Windows) or `cmd+Shift+O` (Mac), but you can customize them from the key bindings.
+   Place your cursor in a block and execute the shortcut key. The default key settings are `ctrl+Shift+O` (Windows) or `cmd+Shift+O` (Mac), but you can customize them from the key bindings.
 
 ### Asset Selection
 

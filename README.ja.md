@@ -1,6 +1,7 @@
-[English](https://github.com/xyhp915/logseq-assets-plus)
-
 # logseq-assets-plus
+
+[English](https://github.com/xyhp915/logseq-assets-plus) |
+[日本語](https://github.com/xyhp915/logseq-assets-plus/blob/master/README.ja.md)  
 
 WIP: Logseq プラグインでアセット(ファイルの保管)の機能を強化するものです！ 🚀
 
@@ -24,7 +25,7 @@ WIP: Logseq プラグインでアセット(ファイルの保管)の機能を強
 
 2. ショートカットキーを使う
 
-ブロックにカーソルを置き、ショートカットを実行します。デフォルトのキー設定は、`Win+Shift+O`(Windows)もしくは`cmd+Shift+O`(Mac)です。キーバインドから変更できます。
+ブロックにカーソルを置き、ショートカットを実行します。デフォルトのキー設定は、`ctrl+Shift+O`(Windows)もしくは`cmd+Shift+O`(Mac)です。キーバインドから変更できます。
 
 ### アセット選択
 
