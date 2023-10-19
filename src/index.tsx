@@ -15,7 +15,11 @@ import {
 import { MoonLoader } from 'react-spinners'
 import { LSPluginBaseInfo } from '@logseq/libs/dist/LSPlugin'
 import normalizePath from 'normalize-path'
-
+import { setup as l10nSetup, t } from "logseq-l10n" //https://github.com/sethyuan/logseq-l10n
+import ja from "./translations/ja.json"
+import zhCN from "./translations/zh-CN.json"
+import zhHant from "./translations/zh-Hant.json"
+import ko from "./translations/ko.json"
 const imageFormats = ['png', 'jpg', 'jpeg', 'webp', 'gif']
 const bookFormats = ['pdf']
 const videoFormats = ['mp4']
@@ -257,8 +261,8 @@ function App() {
         <span className={'icon-wrap'}>
           <ListMagnifyingGlass size={28} weight={'duotone'}/>
         </span>
-        <span className={'input-wrap'}>
-          <input placeholder={'Search local assets for current graph'}
+        <span className={'input-wrap'} title={t("Search by keyword or extension")}>
+          <input placeholder={t("Search local assets for current graph")}
                  value={inputValue}
                  onKeyDown={(e) => {
                    const key = e.code
@@ -294,26 +298,26 @@ function App() {
       <ul className="search-input-tabs">
         <li className={activeTab === 'all' && 'active'} tabIndex={0}
             onClick={() => setActiveTab('all')}>
-          <strong>All</strong>
+          <strong>{t("All")}</strong>
           <code>{data?.length || 0}</code>
         </li>
 
         <li className={activeTab === 'books' && 'active'} tabIndex={0}
             onClick={() => setActiveTab('books')}>
           <Books size={18} weight={'duotone'}/>
-          <strong>Books</strong>
+          <strong>{t("Books")}</strong>
         </li>
 
         <li className={activeTab === 'images' && 'active'} tabIndex={0}
             onClick={() => setActiveTab('images')}>
           <Images size={18} weight={'duotone'}/>
-          <strong>Images</strong>
+          <strong>{t("Images")}</strong>
         </li>
 
         <li className={activeTab === 'audios' && 'active'} tabIndex={0}
             onClick={() => setActiveTab('audios')}>
           <FileAudio size={18} weight={'duotone'}/>
-          <strong>Audios</strong>
+          <strong>{t("Audios")}</strong>
         </li>
 
         {/* settings */}
@@ -328,7 +332,7 @@ function App() {
             <div className="settings-dropdown-content">
               <div className="item as-link" onClick={doPrepareData}>
                 <span><ArrowsClockwise size={17} weight={'bold'}/></span>
-                <strong>Reload assets</strong>
+                <strong>{t("Reload assets")}</strong>
               </div>
             </div>
           )}
@@ -343,7 +347,7 @@ function App() {
           </li> :
           (!currentListData?.length ?
             <li className={'nothing'}>
-              <Prohibit size={16}/> No results
+              <Prohibit size={16} /> {t("No results")}
             </li> :
             (currentListData?.map((it, idx) => {
               let name = it.name
@@ -365,7 +369,7 @@ function App() {
               }
 
               return (
-                <li key={it.path}
+                <li key={it.path} title={t("Insert this asset into the current block at the cursor position")}
                     className={idx === activeIdx && 'active'}
                     onClick={(e) => {
                       e.stopPropagation()
@@ -378,15 +382,15 @@ function App() {
                       title={it.originalName}
                       dangerouslySetInnerHTML={{ __html: name }}></strong>
                     <p>
-                      {it.size} • Modified {it.formatModifiedTime}
+                      {it.size} • {t("Modified")} {it.formatModifiedTime}
                     </p>
 
-                    <span className="ctrls">
+                    <span className="ctrls" title={t("Open the folder on OS")}>
                       <a onClick={(e) => {
                         logseq.App.showItemInFolder(it.path)
                         e.stopPropagation()
                       }}>
-                        <Folder size={18} weight={'duotone'}/>
+                        <Folder size={18} weight={'duotone'} />
                       </a>
                     </span>
                   </div>
@@ -440,6 +444,9 @@ async function showPicker() {
 }
 
 function main(_baseInfo: LSPluginBaseInfo) {
+  (async () => {
+    await l10nSetup({ builtinTranslations: { ja, "zh-CN": zhCN, "zh-Hant": zhHant, ko } }); // logseq-l10n
+  } )();
   const open: any = () => {
     mount()
     return setTimeout(showPicker, 0)
@@ -448,7 +455,7 @@ function main(_baseInfo: LSPluginBaseInfo) {
   logseq.Editor.registerSlashCommand('Insert a local asset file', open)
   logseq.App.registerCommandPalette({
     key: 'logseq-assets-plus',
-    label: 'Assets Plus: open picker',
+    label: t("Assets Plus: open picker"),
     keybinding: { binding: 'mod+shift+o' }
   }, open)
 
