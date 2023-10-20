@@ -1,14 +1,14 @@
 {
     "Assets Plus: open picker": "Assets Plus: 피커 열기",
-    "Search local assets for current graph" : "현재 그래프의 로컬 자산 검색",
+    "Search local assets for current graph": "현재 그래프의 로컬 자산 검색",
     "Audios": "오디오",
     "Images": "이미지",
-    "Books": "책",
+    "Documents": "문서",
     "All": "모두",
     "Reload assets": "자산 다시 로드",
     "Modified": "수정된 날짜",
     "No results": "결과 없음",
-    "Open the folder on OS": "OS에서 폴더 열기",
-    "Insert this asset into the current block at the cursor position": "이 자산을 커서 위치의 현재 블록에 삽입",
+    "Open the folder with the OS": "OS에서 폴더 열기",
+    "Insert this asset at the cursor position. If that position doesn't exist, open the file on the OS.": "커서 위치에 이 자산을 삽입합니다. 해당 위치가 존재하지 않으면 OS에서 파일을 엽니다.",
     "Search by keyword or extension": "키워드 또는 확장자로 검색"
 }

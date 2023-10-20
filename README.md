@@ -26,6 +26,7 @@ From the marketplace:
 2. Use Shortcut Key
 
    Place your cursor in a block and execute the shortcut key. The default key settings are `ctrl+Shift+O` (Windows) or `cmd+Shift+O` (Mac), but you can customize them from the key bindings.
+   > If the cursor position does not exist, the file is opened on the OS without being inserted into any blocks.
 
 ### Asset Selection
 
