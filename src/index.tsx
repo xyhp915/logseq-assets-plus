@@ -1,7 +1,9 @@
 import './index.css'
+import 'react-virtualized/styles.css'
 import '@logseq/libs'
 import { render } from 'preact'
 import { useEffect, useRef, useState } from 'preact/hooks'
+import cx from 'classnames'
 import {
   ArrowsClockwise,
   Books,
@@ -12,6 +14,7 @@ import {
   ListMagnifyingGlass,
   Prohibit
 } from '@phosphor-icons/react'
+import { AutoSizer, List } from 'react-virtualized'
 import { MoonLoader } from 'react-spinners'
 import { LSPluginBaseInfo } from '@logseq/libs/dist/LSPlugin'
 import normalizePath from 'normalize-path'
@@ -23,11 +26,12 @@ import ko from './translations/ko.json'
 
 const imageFormats = ['png', 'jpg', 'jpeg', 'webp', 'gif']
 const bookFormats = ['pdf']
-const videoFormats = ['mp4']
-const audioFormats = ['mp3']
+const documentFormats = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'md', 'txt', 'html', 'htm', 'csv']
+const videoFormats = ['mp4', 'avi', 'mov', 'wmv', 'flv', '3gp', 'mpeg', 'mpg', 'ts', 'm4v']
+const audioFormats = ['mp3', 'wav', 'ogg', 'flac', 'wma']
 
 const tabTypes = {
-  'books': bookFormats,
+  'documents': [...bookFormats, ...documentFormats],
   'audios': audioFormats,
   'images': imageFormats
 }
@@ -45,6 +49,123 @@ const makeMdAssetLink = ({
   return `${isSupportedRichExt ? '!' : ''}[${name}](assets/${path})`
 }
 
+// TODO: use react-virtualized
+function ResultList({ data, inputValue, activeItemIdx, onSelect }) {
+  if (!data?.length) return (
+    <div className={'nothing'}>
+      <Prohibit size={16}/>
+      <p>{t('No results')}</p>
+    </div>)
+
+  const rowRenderer = ({ index, key, style }) => {
+    const it = data[index]
+    let name = it.name
+
+    // highlight matched text
+    if (it.ranges?.length && inputValue?.length) {
+      const ranges = it.ranges.map((range, n) => {
+        if (n === 0) return name.substring(0, range)
+        const ret = name.substring(it.ranges[n - 1], range)
+        return n % 2 === 0 ? ret : `<marker>${ret}</marker>`
+      })
+
+      const lastIdx = it.ranges[it.ranges.length - 1]
+
+      if (lastIdx < name.length) {
+        ranges.push(name.substring(lastIdx))
+      }
+
+      name = ranges.join('')
+    }
+
+    return (
+      <div key={key}
+           style={style}
+           title={t('Insert this asset at the cursor position. If that position doesn\'t exist, open this file on the OS.')}
+           data-index={index}
+           className={cx('list-item', index === activeItemIdx && 'active')}
+           onClick={(e) => {
+             e.stopPropagation()
+             onSelect(it)
+           }}
+      >
+        <div className="l">{it.extname?.toUpperCase()}</div>
+        <div className="r">
+          <strong
+            title={it.originalName}
+            dangerouslySetInnerHTML={{ __html: name }}></strong>
+          <p>
+            {it.size} • {t('Modified')} {it.formatModifiedTime}
+          </p>
+
+          <span className="ctrls" title={t('Open the folder with the OS')}>
+            <a onClick={(e) => {
+              logseq.App.showItemInFolder(it.path)
+              e.stopPropagation()
+            }}>
+              <Folder size={18} weight={'duotone'}/>
+            </a>
+          </span>
+        </div>
+      </div>
+    )
+  }
+
+  // TODO: dynamic size for responsive
+  const listContainerSize = {
+    width: 620,
+    height: 500
+  }
+
+  return (
+    <List className={'search-input-list'}
+          autoWidth={true}
+          rowCount={data.length}
+          rowHeight={60}
+          rowRenderer={rowRenderer}
+          {...listContainerSize}
+    ></List>
+  )
+}
+
+// normalize item data
+function normalizeDataItem(it) {
+  if (!it.path) return
+
+  // TODO: with relative full path
+  it.normalizePath = normalizePath(it.path)
+  it.name = it.normalizePath && it.normalizePath.substring(it.normalizePath.lastIndexOf('/') + 1)
+
+  if (it.name?.startsWith('.')) {
+    return
+  }
+
+  if (typeof it.name === 'string') {
+    it.originalName = it.name
+    it.name = it.name.length > 32 ? it.name.replace(/[0-9_.]{5,}(\.|$)/g, '$1') : it.name
+    const extDotLastIdx = it.name.lastIndexOf('.')
+    if (extDotLastIdx !== -1) {
+      it.extname = it.name.substring(extDotLastIdx + 1)
+    }
+  }
+
+  if (typeof it.size === 'number') {
+    it.size = (it.size / 1024).toFixed(2)
+    if (it.size > 999) {
+      it.size = (it.size / 1024).toFixed(2)
+      it.size += 'MB'
+    } else {
+      it.size += 'KB'
+    }
+  }
+
+  if (typeof it.modifiedTime === 'number') {
+    it.formatModifiedTime = (new Date(it.modifiedTime)).toLocaleString()
+  }
+
+  return it
+}
+
 function App() {
   const elRef = useRef<HTMLDivElement>(null)
   const [visible, setVisible] = useState(false)
@@ -54,52 +175,19 @@ function App() {
   const [_dataDirty, setDataDirty] = useState(false)
   const [currentListData, setCurrentListData] = useState([])
   const [activeItemIdx, setActiveItemIdx] = useState(0)
-  const tabs = ['all', 'books', 'images', 'audios']
+  const tabs = ['all', 'documents', 'images', 'audios']
   const [activeTab, setActiveTab] = useState(tabs[0])
   const [activeSettings, setActiveSettings] = useState(false)
+  const hasInputValue = !!inputValue?.trim()
+  const isAllTab = activeTab === 'all'
+  const isDocumentsTab = activeTab === 'documents'
+  const isImagesTab = activeTab === 'images'
+  const isAudiosTab = activeTab === 'audios'
+
   // const [asFullFeatures, setAsFullFeatures] = useState(false)
-
-  // normalize item data
-  const normalizeDataItem = (it) => {
-    if (!it.path) return
-
-    // TODO: with relative full path
-    it.normalizePath = normalizePath(it.path)
-    it.name = it.normalizePath && it.normalizePath.substring(it.normalizePath.lastIndexOf('/') + 1)
-
-    if (it.name?.startsWith('.')) {
-      return
-    }
-
-    if (typeof it.name === 'string') {
-      it.originalName = it.name
-      it.name = it.name.replace(/[0-9_]{5,}(\.|$)/g, '$1')
-      const extDotLastIdx = it.name.lastIndexOf('.')
-      if (extDotLastIdx !== -1) {
-        it.extname = it.name.substring(extDotLastIdx + 1)
-      }
-    }
-
-    if (typeof it.size === 'number') {
-      it.size = (it.size / 1024).toFixed(2)
-      if (it.size > 999) {
-        it.size = (it.size / 1024).toFixed(2)
-        it.size += 'MB'
-      } else {
-        it.size += 'KB'
-      }
-    }
-
-    if (typeof it.modifiedTime === 'number') {
-      it.formatModifiedTime = (new Date(it.modifiedTime)).toLocaleString()
-    }
-
-    return it
-  }
 
   // is full features pane
   const isAsFullFeatures = () => document.body.classList.contains('as-full')
-
   const resetActiveIdx = () => setActiveItemIdx(0)
   const upActiveIdx = () => {
     setCurrentListData((currentListData) => {
@@ -131,6 +219,24 @@ function App() {
     resetActiveIdx()
     setInputValue('')
     document.body.classList.remove('as-full')
+  }
+
+  // select item
+  const onSelect = (activeItem: any) => {
+    if (!activeItem) return
+    const asFullFeatures = isAsFullFeatures()
+
+    if (asFullFeatures) {
+      logseq.App.openPath(activeItem.path)
+      return
+    }
+
+    closeUI()
+    setInputValue('')
+
+    logseq.Editor.insertAtEditingCursor(
+      makeMdAssetLink(activeItem)
+    )
   }
 
   // load all assets data
@@ -169,8 +275,9 @@ function App() {
       }
 
       if (e.ctrlKey && e.key === 'Tab') {
+        const isShift = e.shiftKey
         const activeTabIdx = tabs.findIndex((v) => v === activeTab)
-        let toIdx = activeTabIdx + 1
+        let toIdx = activeTabIdx + (isShift ? -1 : 1)
         // move tab
         if (toIdx >= tabs.length) toIdx = 0
         if (toIdx < 0) toIdx = (tabs.length - 1)
@@ -215,7 +322,6 @@ function App() {
       const isCtrlKey = e.ctrlKey
       const isArrowUp = key === 'ArrowUp' || (isCtrlKey && key === 'KeyP')
       const isArrowDown = key === 'ArrowDown' || (isCtrlKey && key === 'KeyN')
-      console.log('keydown', key, isArrowUp, isArrowDown)
       if (isArrowDown || isArrowUp) {
         isArrowDown ?
           downActiveIdx() :
@@ -243,8 +349,8 @@ function App() {
       return true
     })
 
-    if (!inputValue?.trim()) {
-      setCurrentListData(typedData?.slice(0, 32))
+    if (!hasInputValue) {
+      setCurrentListData(typedData)
       return
     }
 
@@ -265,18 +371,23 @@ function App() {
       const r = typedData[idx]
       r.ranges = ranges[n]
       return r
-    })?.slice(0, 32))
+    }))
   }, [data, inputValue, activeTab])
 
   // focus active item in view
   useEffect(() => {
     const el = elRef.current
-    const listEl = el?.querySelector('.search-input-list')
+    const listWrapEl = el?.querySelector('.search-input-list-wrap')
+    const listWrapInnerEl = el?.querySelector('.search-input-list-wrap > .ReactVirtualized__List')
     if (!el) return
+    if (activeItemIdx === 0) {
+      listWrapInnerEl?.scrollTo(0, 0)
+      return
+    }
     const activeItem = el.querySelector(`[data-index="${activeItemIdx}"]`)
     if (!activeItem) return
     const activeItemRect = activeItem.getBoundingClientRect()
-    const elRect = listEl.getBoundingClientRect()
+    const elRect = listWrapEl.getBoundingClientRect()
     const { height: itemHeight } = activeItemRect
     const { height: elHeight } = elRect
     const { top: itemTop } = activeItemRect
@@ -293,23 +404,6 @@ function App() {
       })
     }
   }, [activeItemIdx])
-
-  const onSelect = (activeItem: any) => {
-    if (!activeItem) return
-    const asFullFeatures = isAsFullFeatures()
-
-    if (asFullFeatures) {
-      logseq.App.openPath(activeItem.path)
-      return
-    }
-
-    closeUI()
-    setInputValue('')
-
-    logseq.Editor.insertAtEditingCursor(
-      makeMdAssetLink(activeItem)
-    )
-  }
 
   return (
     <div className={'search-input-container animate__animated' + (visible ? ' animate__defaultIn' : '')}
@@ -329,7 +423,7 @@ function App() {
                    const isArrowDown = key === 'ArrowDown' || (isCtrlKey && key === 'KeyN')
                    const isTab = key === 'Tab'
 
-                   if (isTab) {
+                   if (isTab && !isCtrlKey) {
                      e.preventDefault()
                      const activeTabIdx = tabs.findIndex((v) => v === activeTab)
                      let toIdx = activeTabIdx + 1
@@ -367,28 +461,31 @@ function App() {
 
       {/* tabs */}
       <ul className="search-input-tabs">
-        <li className={activeTab === 'all' && 'active'} tabIndex={0}
+        <li className={isAllTab && 'active'} tabIndex={0}
             onClick={() => setActiveTab('all')}>
           <strong>{t('All')}</strong>
-          <code>{data?.length || 0}</code>
+          <code>{(hasInputValue && isAllTab) ? currentListData?.length : (data?.length || 0)}</code>
         </li>
 
-        <li className={activeTab === 'books' && 'active'} tabIndex={0}
-            onClick={() => setActiveTab('books')}>
+        <li className={isDocumentsTab && 'active'} tabIndex={0}
+            onClick={() => setActiveTab('documents')}>
           <Books size={18} weight={'duotone'}/>
           <strong>{t('Documents')}</strong>
+          {isDocumentsTab && (<code>{currentListData?.length}</code>)}
         </li>
 
         <li className={activeTab === 'images' && 'active'} tabIndex={0}
             onClick={() => setActiveTab('images')}>
           <Images size={18} weight={'duotone'}/>
           <strong>{t('Images')}</strong>
+          {isImagesTab && (<code>{currentListData?.length}</code>)}
         </li>
 
         <li className={activeTab === 'audios' && 'active'} tabIndex={0}
             onClick={() => setActiveTab('audios')}>
           <FileAudio size={18} weight={'duotone'}/>
           <strong>{t('Audios')}</strong>
+          {isAudiosTab && (<code>{currentListData?.length}</code>)}
         </li>
 
         {/* settings */}
@@ -410,66 +507,18 @@ function App() {
         </li>
       </ul>
 
-      {/* items */}
-      <ul className={'search-input-list'}>
+      {/* results */}
+      <div className={'search-input-list-wrap'}>
         {preparing ?
-          <li className={'loading'}>
+          <p className={'loading'}>
             <MoonLoader size={18}/>
-          </li> :
-          (!currentListData?.length ?
-            <li className={'nothing'}>
-              <Prohibit size={16}/> {t('No results')}
-            </li> :
-            (currentListData?.map((it, idx) => {
-              let name = it.name
-
-              if (it.ranges?.length && inputValue?.length) {
-                const ranges = it.ranges.map((range, n) => {
-                  if (n === 0) return name.substring(0, range)
-                  const ret = name.substring(it.ranges[n - 1], range)
-                  return n % 2 === 0 ? ret : `<marker>${ret}</marker>`
-                })
-
-                const lastIdx = it.ranges[it.ranges.length - 1]
-
-                if (lastIdx < name.length) {
-                  ranges.push(name.substring(lastIdx))
-                }
-
-                name = ranges.join('')
-              }
-
-              return (
-                <li key={it.path} title={t('Insert this asset at the cursor position. If that position doesn\'t exist, open this file on the OS.')}
-                    data-index={idx}
-                    className={idx === activeItemIdx && 'active'}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onSelect(it)
-                    }}
-                >
-                  <div className="l">{it.extname?.toUpperCase()}</div>
-                  <div className="r">
-                    <strong
-                      title={it.originalName}
-                      dangerouslySetInnerHTML={{ __html: name }}></strong>
-                    <p>
-                      {it.size} • {t('Modified')} {it.formatModifiedTime}
-                    </p>
-
-                    <span className="ctrls" title={t('Open the folder with the OS')}>
-                      <a onClick={(e) => {
-                        logseq.App.showItemInFolder(it.path)
-                        e.stopPropagation()
-                      }}>
-                        <Folder size={18} weight={'duotone'}/>
-                      </a>
-                    </span>
-                  </div>
-                </li>
-              )
-            })))}
-      </ul>
+          </p> :
+          (<ResultList
+            data={currentListData}
+            inputValue={inputValue}
+            activeItemIdx={activeItemIdx}
+            onSelect={onSelect}/>)}
+      </div>
     </div>
   )
 }

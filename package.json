@@ -16,6 +16,8 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@types/normalize-path": "^3.0.1",
+    "@types/react-virtualized": "^9.21.26",
     "parcel": "^2.10.0"
   },
   "alias": {
@@ -27,9 +29,11 @@
   "dependencies": {
     "@logseq/libs": "^0.0.15",
     "@phosphor-icons/react": "^2.0.13",
+    "classnames": "^2.3.2",
     "logseq-l10n": "^0.2.0",
     "normalize-path": "^3.0.0",
     "preact": "^10.18.1",
-    "react-spinners": "^0.13.8"
+    "react-spinners": "^0.13.8",
+    "react-virtualized": "^9.22.5"
   }
 }
