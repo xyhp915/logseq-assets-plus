@@ -222,13 +222,27 @@ function App() {
   }
 
   // select item
-  const onSelect = (activeItem: any) => {
+  const onSelect = async (
+    activeItem: any,
+    options?: { isMetaKey?: boolean, isCtrlKey?: boolean }
+  ) => {
     if (!activeItem) return
     const asFullFeatures = isAsFullFeatures()
+    const { isMetaKey, isCtrlKey } = options || {}
+    const builtInSupport = [...bookFormats]
 
     if (asFullFeatures) {
-      logseq.App.openPath(activeItem.path)
-      return
+      if (!isCtrlKey && builtInSupport.includes(activeItem.extname?.toLowerCase())) {
+        try {
+          // @ts-ignore
+          await logseq.Assets.builtInOpen(activeItem.path)
+          return closeUI()
+        } catch (error) {
+          // Note: compatible with old version
+        }
+      }
+
+      return logseq.App.openPath(activeItem.path)
     }
 
     closeUI()
@@ -282,6 +296,13 @@ function App() {
         if (toIdx >= tabs.length) toIdx = 0
         if (toIdx < 0) toIdx = (tabs.length - 1)
         setActiveTab(tabs[toIdx])
+        return
+      }
+
+      if (e.key === 'Enter') {
+        const activeItem = currentListData?.[activeItemIdx]
+        onSelect(activeItem, { isMetaKey: e.metaKey, isCtrlKey: e.ctrlKey })
+        return
       }
     }
 
@@ -445,10 +466,14 @@ function App() {
                  }}
 
                  onKeyUp={(e) => {
-                   if (e.key === 'Enter') {
+                   const isEnter = e.key === 'Enter'
+                   const isCtrlKey = e.ctrlKey
+
+                   if (isEnter) {
                      e.preventDefault()
+                     e.stopPropagation()
                      const activeItem = currentListData?.[activeItemIdx]
-                     onSelect(activeItem)
+                     onSelect(activeItem, { isCtrlKey })
                      return
                    }
                  }}
@@ -461,27 +486,27 @@ function App() {
 
       {/* tabs */}
       <ul className="search-input-tabs">
-        <li className={isAllTab && 'active'} tabIndex={0}
+        <li className={isAllTab && 'active'}
             onClick={() => setActiveTab('all')}>
           <strong>{t('All')}</strong>
           <code>{(hasInputValue && isAllTab) ? currentListData?.length : (data?.length || 0)}</code>
         </li>
 
-        <li className={isDocumentsTab && 'active'} tabIndex={0}
+        <li className={isDocumentsTab && 'active'}
             onClick={() => setActiveTab('documents')}>
           <Books size={18} weight={'duotone'}/>
           <strong>{t('Documents')}</strong>
           {isDocumentsTab && (<code>{currentListData?.length}</code>)}
         </li>
 
-        <li className={activeTab === 'images' && 'active'} tabIndex={0}
+        <li className={activeTab === 'images' && 'active'}
             onClick={() => setActiveTab('images')}>
           <Images size={18} weight={'duotone'}/>
           <strong>{t('Images')}</strong>
           {isImagesTab && (<code>{currentListData?.length}</code>)}
         </li>
 
-        <li className={activeTab === 'audios' && 'active'} tabIndex={0}
+        <li className={activeTab === 'audios' && 'active'}
             onClick={() => setActiveTab('audios')}>
           <FileAudio size={18} weight={'duotone'}/>
           <strong>{t('Audios')}</strong>
